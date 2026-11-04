@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="pt-BR" class="sem-3d"><!-- cena.js troca por com-3d quando o WebGL sobe; sem ele (arquivo aberto direto, CDN fora) ficam as reservas -->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pró-Dente & Saúde — Odontologia e Psicologia em Paulínia</title>
+  <meta name="description" content="Pró-Dente & Saúde: odontologia e psicologia em Paulínia, com atendimento humano e tecnologia. Agende pelo WhatsApp.">
+  <meta name="theme-color" content="#f4fbff">
+  <link rel="icon" href="assets/simbolo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilo.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <div id="fundo" aria-hidden="true"><span class="bolha b1"></span><span class="bolha b2"></span><span class="bolha b3"></span></div>
+
+  <header class="barra" id="barra">
+    <a class="barra-logo" href="#topo" aria-label="Pró-Dente & Saúde, início">
+      <img src="assets/simbolo.svg" alt="" width="36" height="29">
+      <span class="marca"><b>PRÓ-DENTE</b> <small>&amp; Saúde</small></span>
+    </a>
+    <button class="menu-botao" id="menuBotao" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
+    <nav class="menu" id="menu">
+      <a href="#sobre">Sobre</a>
+      <a href="#tratamentos">Tratamentos</a>
+      <a href="#clareamento">Simulador</a>
+      <a href="#equipe">Equipe</a>
+      <a href="#psicologia">Psicologia</a>
+      <a href="#localizacao">Onde estamos</a>
+      <a href="#agendar" class="menu-destaque">Agendar</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- topo: a seção é mais alta que a tela; o palco fica preso (sticky) enquanto o dente vira a logo -->
+    <section class="topo" id="topo">
+      <div class="topo-fixo">
+        <div class="palco palco-topo" data-cena="topo"><canvas aria-hidden="true"></canvas>
+          <img class="palco-reserva logo-estatica" src="assets/simbolo.svg" alt="">
+        </div>
+        <div class="topo-texto">
+          <p class="selo vidro">Odontologia e Psicologia</p>
+          <h1 class="titulo-marca"><span class="pro">PRÓ-DENTE</span><span class="saude">&amp; Saúde</span></h1>
+          <p class="slogan" data-d="slogan"></p>
+          <div class="topo-botoes">
+            <a class="botao botao-whats" data-whats target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whats"/></svg>Agendar pelo WhatsApp</a>
+            <a class="botao botao-claro" href="#tratamentos">Ver tratamentos</a>
+          </div>
+        </div>
+        <a class="rolar" href="#sobre" aria-label="Rolar para baixo"><span></span></a>
+      </div>
+    </section>
+
+    <section class="secao" id="sobre">
+      <div class="conteudo duas-colunas">
+        <div class="entra">
+          <p class="sobretitulo">Sobre nós</p>
+          <h2>Odontologia com carinho e tecnologia</h2>
+          <div id="sobreTexto"></div>
+        </div>
+        <div class="numeros entra" id="numeros"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="tratamentos">
+      <div class="conteudo">
+        <p class="sobretitulo entra">Tratamentos</p>
+        <h2 class="entra">Tudo para o seu sorriso em um só lugar</h2>
+        <div class="grade-tratamentos" id="listaTratamentos"></div>
+        <h3 class="titulo-outros entra">Também atendemos</h3>
+        <div class="grade-outros" id="outrosTratamentos"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="clareamento">
+      <div class="conteudo duas-colunas simulador">
+        <div class="palco palco-sim entra" data-cena="simulador"><canvas aria-hidden="true"></canvas>
+          <svg class="palco-reserva" id="simDenteReserva" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3c-2.5 0-4 2-4 4.5 0 3 1.5 4.5 2 7.5.4 2.6 1 6 2.5 6s1.6-4.5 2.5-4.5h4c.9 0 1 4.5 2.5 4.5s2.1-3.4 2.5-6c.5-3 2-4.5 2-7.5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3Z"/></svg>
+          <div class="sim-placa vidro"><span>Tom</span><strong id="simCodigo">A3.5</strong><small id="simDif"></small></div>
+        </div>
+        <div class="entra">
+          <p class="sobretitulo">Simulador de clareamento</p>
+          <h2>Arraste e veja seu dente clarear</h2>
+          <p class="texto-suave">A cor dos dentes é medida numa escala de tons, como a VITA usada nos consultórios. Arraste para a direita e veja até onde um clareamento pode levar.</p>
+          <label class="sim-rotulo" for="simEntrada">Tom do dente</label>
+          <div class="sim-controle">
+            <input id="simEntrada" type="range" min="0" max="15" step="1" value="4">
+            <ol class="sim-tons" id="simTons" aria-hidden="true"></ol>
+          </div>
+          <div class="sim-acoes">
+            <button class="botao botao-escuro" id="simClarear" type="button">Simular clareamento</button>
+          </div>
+          <p class="aviso">Simulação ilustrativa, com cores aproximadas. O tom possível de alcançar depende de cada pessoa e só é definido na avaliação.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao" id="antes-depois">
+      <div class="conteudo">
+        <p class="sobretitulo entra">Antes e depois</p>
+        <h2 class="entra">A diferença que um cuidado faz</h2>
+        <div class="ad-quadro entra" id="adQuadro"></div>
+        <p class="aviso centro" id="adLegenda"></p>
+      </div>
+    </section>
+
+    <section class="secao" id="equipe">
+      <div class="conteudo">
+        <p class="sobretitulo entra">Equipe</p>
+        <h2 class="entra">Quem cuida do seu sorriso</h2>
+        <div class="grade-equipe" id="listaEquipe"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="psicologia">
+      <div class="conteudo">
+        <p class="sobretitulo entra">Psicologia</p>
+        <h2 class="entra">Cuidar da mente também é cuidar da saúde</h2>
+        <p class="texto-suave psi-intro entra" id="psiIntro"></p>
+        <div class="grade-outros psi-areas" id="psiAreas"></div>
+        <h3 class="titulo-outros entra">Quem atende</h3>
+        <div class="grade-equipe psi-equipe" id="listaPsicologia"></div>
+        <div class="psi-acao entra">
+          <a class="botao botao-whats" id="psiWhats" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whats"/></svg>Agendar pelo WhatsApp</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao" id="depoimentos">
+      <div class="conteudo">
+        <p class="sobretitulo entra">Depoimentos</p>
+        <h2 class="entra">O que dizem nossos pacientes</h2>
+      </div>
+      <div class="carrossel entra" id="listaDepoimentos" tabindex="0" aria-label="Depoimentos de pacientes"></div>
+      <div class="conteudo">
+        <div class="cartao vidro google entra" id="google"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="localizacao">
+      <div class="conteudo duas-colunas">
+        <div class="entra">
+          <p class="sobretitulo">Onde estamos</p>
+          <h2>Venha nos visitar</h2>
+          <p class="endereco" id="endereco"></p>
+          <a class="botao botao-claro" id="rota" target="_blank" rel="noopener">Abrir rota no mapa</a>
+          <h3 class="titulo-horarios">Horários <span class="estado-agora" id="estadoAgora"></span></h3>
+          <ul class="horarios vidro" id="horarios"></ul>
+        </div>
+        <div class="mapa entra" id="mapa">
+          <button class="mapa-carregar" id="mapaCarregar" type="button">Carregar mapa</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao" id="agendar">
+      <div class="conteudo">
+        <p class="sobretitulo entra">Agendamento</p>
+        <h2 class="entra">Marque sua consulta em um minuto</h2>
+        <div class="duas-colunas agenda">
+          <form class="cartao vidro form-agenda entra" id="formAgenda">
+            <label>Seu nome<input id="agNome" type="text" autocomplete="name" placeholder="Como podemos te chamar?"></label>
+            <label>Tratamento<select id="agTratamento"></select></label>
+            <div class="form-linha">
+              <label>Dia<select id="agDia"></select></label>
+              <label>Período<select id="agPeriodo"></select></label>
+            </div>
+            <label><span>Observação <small>(opcional)</small></span><textarea id="agObs" rows="2" placeholder="Ex.: estou com dor, prefiro a Dra. Daniela..."></textarea></label>
+            <button class="botao botao-whats" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whats"/></svg>Enviar pelo WhatsApp</button>
+          </form>
+          <div class="entra">
+            <p class="previa-titulo">A mensagem vai assim:</p>
+            <div class="balao"><p id="agPrevia"></p></div>
+            <p class="texto-suave">O WhatsApp abre com o texto pronto; é só tocar em enviar. A gente responde e confirma o horário.</p>
+          </div>
+        </div>
+        <div class="grade-contato" id="listaContato"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="conteudo">
+      <div class="rodape-marca">
+        <img src="assets/simbolo.svg" alt="" width="54" height="44">
+        <span class="marca"><b>PRÓ-DENTE</b> <small>&amp; Saúde</small></span>
+      </div>
+      <p id="registro"></p>
+      <p id="responsavel"></p>
+      <p id="rodapeEndereco"></p>
+      <p class="copia">© <span id="ano"></span> Pró-Dente &amp; Saúde. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <a class="whats-flutuante" data-whats target="_blank" rel="noopener" aria-label="Agendar pelo WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whats"/></svg></a>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-whats" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></symbol>
+  </svg>
+
+  <script src="js/dados.js"></script>
+  <script src="js/conteudo.js"></script>
+  <script type="module" src="js/cena.js"></script>
+</body>
+</html>

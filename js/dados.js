@@ -84,16 +84,16 @@ window.DADOS = {
   // area: "psicologia" põe a pessoa na seção de psicologia; sem area, ela fica na Equipe (odontologia).
   // responsavel: true em quem for responsável técnico(a); aparece no rodapé.
   equipe: [
-    { nome: "Dra. Daniela Barbosa Landim", titulo: "Cirurgiã Dentista", cargo: "Implantodontista e Dentística Restauradora", cro: "CROSP 63544", foto: "", responsavel: true },
-    { nome: "Dra. Beatriz Anjos dos Santos", titulo: "Cirurgiã Dentista", cargo: "Clínica Geral — atendimento adulto e infantil", cro: "CROSP 151194", foto: "" },
-    { nome: "Dra. Aline Giunco", titulo: "Cirurgiã Dentista", cargo: "Endodontista", cro: "CROSP 096676", foto: "" },
-    { nome: "Dr. Lindsey Silva Borreli", titulo: "Cirurgião Dentista", cargo: "Periodontista", cro: "CROSP 85554", foto: "" },
-    { nome: "Dra. Sarah Ferreira", titulo: "Cirurgiã Dentista", cargo: "Especialista em Ortodontia e Ortopedia Funcional dos Maxilares", cro: "CROSP 103626", foto: "" }, // drasarahferreira.com.br, 2026-11-04
+    { nome: "Dra. Daniela Barbosa Landim", titulo: "Cirurgiã Dentista", cargo: "Implantodontista e Dentística Restauradora", cro: "CROSP 63544", foto: "assets/equipe/daniela.jpg", responsavel: true },
+    { nome: "Dra. Beatriz Anjos dos Santos", titulo: "Cirurgiã Dentista", cargo: "Clínica Geral — atendimento adulto e infantil", cro: "CROSP 151194", foto: "assets/equipe/beatriz.jpg" },
+    { nome: "Dra. Aline Giunco", titulo: "Cirurgiã Dentista", cargo: "Endodontista", cro: "CROSP 096676", foto: "assets/equipe/aline.jpg" },
+    { nome: "Dr. Lindsey Silva Borreli", titulo: "Cirurgião Dentista", cargo: "Periodontista", cro: "CROSP 85554", foto: "assets/equipe/lindsey.jpg" },
+    { nome: "Dra. Sarah Ferreira", titulo: "Cirurgiã Dentista", cargo: "Especialista em Ortodontia e Ortopedia Funcional dos Maxilares", cro: "CROSP 103626", foto: "assets/equipe/sarah.jpg" }, // drasarahferreira.com.br, 2026-11-04
     { nome: "Márcia Regina Ioricci", cargo: "Psicóloga Clínica", cro: "CRP 06/220154", foto: "", area: "psicologia", whatsapp: "5519900000001", whatsappTexto: "(19) 90000-0001" },
     { nome: "Ana Paula Bernardo", cargo: "Psicóloga Clínica", cro: "CRP 06/22422", foto: "", area: "psicologia", whatsapp: "5519900000002", whatsappTexto: "(19) 90000-0002" },
     { nome: "Tatiane Soares", cargo: "Psicóloga Clínica", cro: "CRP 06/115394", foto: "", area: "psicologia", whatsapp: "5519900000003", whatsappTexto: "(19) 90000-0003" },
     { nome: "Kely Fonseca", cargo: "Psicóloga", cro: "CRP 06/181608", foto: "", area: "psicologia", whatsapp: "5519900000004", whatsappTexto: "(19) 90000-0004" },
-    { nome: "Luciana Nascimento", cargo: "Psicopedagoga / Neuropsicopedagoga", cro: "CBO 2394-25", foto: "", area: "psicologia" }
+    { nome: "Luciana Nascimento", cargo: "Psicopedagoga, Neuropsicopedagoga e Neuropsicanalista", cro: "CBO 2394-25", foto: "assets/equipe/luciana.jpg", area: "psicologia" }
   ],
 
   // Depoimentos: trechos curtos de avaliações reais de 5 estrelas no Google Maps (lidas em 2026-11-04)

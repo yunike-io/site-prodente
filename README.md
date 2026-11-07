@@ -74,7 +74,7 @@ não serve de medida.
 - Texto do "Sobre nós" (2 parágrafos)
 - Números: 27+ anos (informado pela família); 8.000+ pacientes e 9 especialidades sem fonte, mantidos por enquanto
 - Tratamentos: os 6 com 3D (Implantes, Ortodontia, Clareamento, Limpeza e prevenção, Próteses, Tratamento de canal) e os 3 sem 3D (Clínica geral, Atendimento infantil, Estética e lentes), com as descrições
-- Equipe: dados reais desde 2026-11-04. Fotos pendentes: `dados.js` → `equipe[].foto`; vazio mostra um placeholder. Responsável técnica: Dra. Daniela (`responsavel: true`).
+- Equipe: dados reais desde 2026-11-04. Fotos reais dos 5 dentistas e da Luciana desde 2026-11-07, recortadas em quadrado 400 px em `assets/equipe/`. Faltam as 4 psicólogas (`dados.js` → `equipe[].foto`; vazio mostra um placeholder). Responsável técnica: Dra. Daniela (`responsavel: true`).
 - Depoimentos: trechos reais do Google Maps, lidos em 2026-11-04
 - Google: nota 4,5 com 22 avaliações (2026-11-04). O link "Avaliar no Google" é uma busca pelo endereço; trocar pelo link de avaliação da ficha
 - Horários: seg a sex 08:30–19:00, sáb e dom fechado (Google Maps)

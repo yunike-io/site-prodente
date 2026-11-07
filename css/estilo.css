@@ -382,3 +382,12 @@ body.rolado .whats-flutuante { transform: scale(1); }
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; transition-delay: 0ms !important; }
   .entra { opacity: 1; transform: none; }
 }
+
+/* Perguntas frequentes */
+.faq { display: grid; gap: 12px; max-width: 760px; margin-top: 24px; }
+.faq-item { padding: 18px 22px; }
+.faq-item summary { cursor: pointer; font-weight: 700; color: var(--texto); list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after { content: "+"; color: var(--claro); font-weight: 800; }
+.faq-item[open] summary::after { content: "–"; }
+.faq-item p { margin: 10px 0 0; color: var(--texto-suave); }

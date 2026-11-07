@@ -161,6 +161,11 @@
     '<div class="google-nota"><span class="g-logo" aria-hidden="true">G</span><div><strong>' + numBR(D.google.nota, 1) + "</strong> " + estrelas(D.google.nota) +
     "<p>" + D.google.avaliacoes + ' avaliações no Google</p></div></div><a class="botao botao-escuro" target="_blank" rel="noopener" href="' + D.google.link + '">Avaliar no Google</a>';
 
+  // ---------- perguntas frequentes ----------
+  $("#listaFaq").innerHTML = D.faq.map(function (f) {
+    return '<details class="cartao vidro faq-item"><summary>' + esc(f.pergunta) + "</summary><p>" + esc(f.resposta) + "</p></details>";
+  }).join("");
+
   // ---------- localização e horários ----------
   var endCompleto = D.endereco + ", " + D.cidade + " — CEP " + D.cep;
   $("#endereco").innerHTML = icone("pino") + "<span>" + esc(endCompleto) + "</span>";

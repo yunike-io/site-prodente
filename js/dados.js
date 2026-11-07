@@ -97,13 +97,15 @@ window.DADOS = {
   ],
 
   // Perguntas frequentes: só respostas confirmadas pela clínica (Kevin, 2026-11-07).
-  // Faltam: medo de dentista, duração do clareamento, estacionamento e acessibilidade.
   faq: [
     { pergunta: "Vocês aceitam convênio?", resposta: "Sim: Amil, SulAmérica e Porto Seguro." },
     { pergunta: "Quais são as formas de pagamento?", resposta: "Dinheiro, Pix e cartão de crédito ou débito. Dá para parcelar sem juros." },
     { pergunta: "A avaliação é paga?", resposta: "Não. A avaliação é gratuita." },
     { pergunta: "Vocês atendem urgência?", resposta: "Sim, atendemos urgência." },
-    { pergunta: "A partir de que idade vocês atendem crianças?", resposta: "Atendemos crianças pequenas, sem uma idade mínima definida. O que importa é a criança se sentir tranquila durante o atendimento." }
+    { pergunta: "A partir de que idade vocês atendem crianças?", resposta: "Atendemos crianças pequenas, sem uma idade mínima definida. O que importa é a criança se sentir tranquila durante o atendimento." },
+    { pergunta: "Tenho medo de dentista. E agora?", resposta: "Pode ficar tranquilo: nossos dentistas são delicados e vão no seu ritmo." },
+    { pergunta: "Quanto tempo leva um clareamento?", resposta: "Depende do resultado que você deseja. Há duas opções: o caseiro, com uma placa usada antes de dormir, e o de consultório, que clareia em uma única sessão." },
+    { pergunta: "Tem estacionamento e acessibilidade?", resposta: "Sim, temos estacionamento e acessibilidade." }
   ],
 
   // Depoimentos: trechos curtos de avaliações reais de 5 estrelas no Google Maps (lidas em 2026-11-04)

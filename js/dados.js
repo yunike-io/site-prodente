@@ -98,9 +98,7 @@ window.DADOS = {
 
   // Depoimentos: trechos curtos de avaliações reais de 5 estrelas no Google Maps (lidas em 2026-11-04)
   depoimentos: [
-    { nome: "Manoel N.", texto: "Excelente atendimento na Pró-dente, equipe acolhedora, tratamento eficaz e ambiente agradável.", nota: 5 },
     { nome: "Flavio C.", texto: "Atendimento muito bom, (como sempre). Excelente trabalho executado pela profissional dra. Daniela Landim.", nota: 5 },
-    { nome: "Briann G.", texto: "Os profissionais foram atenciosos, explicando os procedimentos claramente...", nota: 5 },
     { nome: "Mboscolo", texto: "Fiz um clareamento otimo com a Doutora Daniela, recomendo!!!", nota: 5 },
     { nome: "Petras B.", texto: "Muito bom!!! Atendimento pontual e excelente recomendações.", nota: 5 }
   ],

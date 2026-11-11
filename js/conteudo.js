@@ -49,7 +49,7 @@
 
   // ---------- tratamentos (cada um com um palco 3D; o ícone é a reserva sem WebGL) ----------
   $("#listaTratamentos").innerHTML = D.tratamentos.map(function (t, i) {
-    return '<article class="cartao vidro tratamento entra" style="--atraso:' + (i % 3) * 90 + 'ms">' +
+    return '<article class="cartao tratamento entra" style="--atraso:' + (i % 3) * 90 + 'ms">' +
       '<div class="palco palco-trat" data-cena="' + t.cena + '"><canvas aria-hidden="true"></canvas><span class="palco-reserva">' + icone(ICONE_CENA[t.cena] || "dente") + "</span></div>" +
       '<div class="tratamento-texto"><h3>' + esc(t.titulo) + "</h3><p>" + esc(t.texto) + "</p></div></article>";
   }).join("");
@@ -60,7 +60,19 @@
 
   // ---------- simulador de clareamento ----------
   var escala = D.escalaCor, nTons = escala.length;
-  var iInicial = Math.max(0, escala.map(function (e) { return e.cod; }).indexOf(D.tomInicial));
+  var codigos = escala.map(function (e) { return e.cod; });
+  // tom de partida: sorteado dentro de D.tomInicialFaixa, ou fixo em D.tomInicial se a faixa não valer
+  var iInicial = (function () {
+    var f = D.tomInicialFaixa, a, b, lo, hi;
+    if (f && f.length === 2) {
+      a = codigos.indexOf(f[0]); b = codigos.indexOf(f[1]);
+      if (a >= 0 && b >= 0) {
+        lo = Math.min(a, b); hi = Math.max(a, b);
+        return lo + Math.floor(Math.random() * (hi - lo + 1));
+      }
+    }
+    return Math.max(0, codigos.indexOf(D.tomInicial));
+  })();
   var faixa = $("#simTons"), entrada = $("#simEntrada");
   faixa.innerHTML = escala.map(function (e, i) {
     return '<li style="--c:' + e.cor + '" data-i="' + i + '"><span>' + esc(e.cod) + "</span></li>";
@@ -80,15 +92,31 @@
     faixa.querySelectorAll("li").forEach(function (li, k) { li.classList.toggle("ativo", k === i); });
     entrada.setAttribute("aria-valuetext", e.cod + ", " + $("#simDif").textContent);
     document.documentElement.style.setProperty("--sim-pos", (i / (nTons - 1) * 100).toFixed(2) + "%");
+    atualizarBotaoSim(i);
+  }
+  // o botão troca de papel: enquanto dá pra clarear ele simula; chegando no tom final (B1) vira
+  // chamada de agendamento, no verde do WhatsApp — é onde o paciente decide marcar
+  var botaoSim = $("#simClarear"), simPronto = null;
+  function atualizarBotaoSim(i) {
+    var noFim = i >= nTons - 1;
+    if (noFim === simPronto) return;
+    simPronto = noFim;
+    botaoSim.classList.toggle("botao-escuro", !noFim);
+    botaoSim.classList.toggle("botao-whats", noFim);
+    botaoSim.classList.toggle("sim-pronto", noFim);
+    botaoSim.innerHTML = noFim
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whats"/></svg>Gostou? Agende seu clareamento'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-faisca"/></svg>Simular clareamento';
   }
   entrada.addEventListener("input", function () { mostrarTom(+entrada.value); });
   faixa.addEventListener("click", function (ev) {
     var li = ev.target.closest("li");
     if (li) { entrada.value = li.dataset.i; mostrarTom(+li.dataset.i); }
   });
-  $("#simClarear").addEventListener("click", function () {
+  botaoSim.addEventListener("click", function () {
+    if (simPronto) { window.open(linkWhatsTexto(D.clareamentoMensagem), "_blank", "noopener"); return; }
     var de = +entrada.value, ate = nTons - 1;
-    if (semMovimento || de >= ate) { entrada.value = ate; mostrarTom(ate); return; }
+    if (semMovimento) { entrada.value = ate; mostrarTom(ate); return; }
     var t0 = performance.now(), dur = 1800;
     (function passo(t) {
       var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3), v = de + (ate - de) * e;
@@ -107,12 +135,18 @@
   };
   var comFotos = !!(AD.antes && AD.depois);
   quadro.innerHTML = camada("antes", "Antes", AD.tomAntes, comFotos && AD.antes) + camada("depois", "Depois", AD.tomDepois, comFotos && AD.depois) +
-    '<div class="ad-linha" aria-hidden="true"><span></span></div>' +
+    '<div class="ad-linha" aria-hidden="true"><span></span><i></i><i></i><i></i><i></i></div>' +
     '<input class="ad-entrada" type="range" min="0" max="100" value="50" aria-label="Arraste para comparar antes e depois">';
   $("#adLegenda").textContent = AD.legenda;
   var adEntrada = quadro.querySelector(".ad-entrada");
   var adPos = function () { quadro.style.setProperty("--pos", adEntrada.value + "%"); };
-  adEntrada.addEventListener("input", adPos);
+  var adSolta;
+  adEntrada.addEventListener("input", function () {
+    adPos();
+    quadro.classList.add("arrastando"); // acelera as faíscas da linha enquanto o dedo/mouse está nela
+    clearTimeout(adSolta);
+    adSolta = setTimeout(function () { quadro.classList.remove("arrastando"); }, 700);
+  });
   adPos();
   // desenho 2D de reserva (o cena.js troca pelo render 3D quando há WebGL)
   if (!comFotos) quadro.querySelectorAll("canvas[data-tom]").forEach(function (cv) {
@@ -158,8 +192,8 @@
     return '<figure class="cartao vidro depoimento">' + estrelas(d.nota) + "<blockquote>“" + esc(d.texto) + "”</blockquote><figcaption>" + esc(d.nome) + "</figcaption></figure>";
   }).join("");
   $("#google").innerHTML =
-    '<div class="google-nota"><span class="g-logo" aria-hidden="true">G</span><div><strong>' + numBR(D.google.nota, 1) + "</strong> " + estrelas(D.google.nota) +
-    "<p>" + D.google.avaliacoes + ' avaliações no Google</p></div></div><a class="botao botao-escuro" target="_blank" rel="noopener" href="' + D.google.link + '">Avaliar no Google</a>';
+    '<div class="google-nota"><span class="g-logo" aria-hidden="true"><img src="assets/google.png" alt="" width="34" height="34" loading="lazy"></span><div><strong>' + numBR(D.google.nota, 1) + "</strong> " + estrelas(D.google.nota) +
+    "<p>" + esc(D.google.avaliacoes) + ' avaliações no Google</p></div></div><a class="botao botao-escuro" target="_blank" rel="noopener" href="' + esc(D.google.link) + '">Avaliar no Google</a>';
 
   // ---------- perguntas frequentes ----------
   $("#listaFaq").innerHTML = D.faq.map(function (f) {

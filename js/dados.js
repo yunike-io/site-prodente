@@ -10,6 +10,7 @@ window.DADOS = {
   whatsapp: "5519981433568", // só números, com 55 + DDD
   whatsappTexto: "(19) 98143-3568",
   whatsappMensagem: "Olá! Vim pelo site e gostaria de agendar uma consulta.",
+  clareamentoMensagem: "Olá! Vim pelo site, usei o simulador de clareamento e gostaria de agendar uma avaliação.",
   telefone: "1938333428",
   telefoneTexto: "(19) 3833-3428",
   instagram: "prodente.clinica", // sem o @
@@ -58,12 +59,16 @@ window.DADOS = {
     { cod: "D2", cor: "#e6dcc8" }, { cod: "B2", cor: "#ede3c8" }, { cod: "A1", cor: "#efe8d6" },
     { cod: "B1", cor: "#f4f0e4" }
   ],
+  // Tom de partida do simulador. Com tomInicialFaixa preenchida, o site sorteia um tom dentro dela
+  // (incluindo as pontas) a cada carregamento, pra nunca começar já quase branco; deixe-a vazia
+  // pra usar sempre o tomInicial. A faixa vai pela ordem da escalaCor acima, do escuro ao claro.
   tomInicial: "A3.5",
+  tomInicialFaixa: ["C4", "D4"],
 
   // Antes e depois: deixe vazio pra usar os renders do dente 3D; com as fotos reais, ponha o caminho
   // (ex.: "assets/antes-1.jpg"). As duas fotos precisam ter o mesmo enquadramento.
   antesDepois: { antes: "", depois: "", tomAntes: "#cdb385", tomDepois: "#f4f0e4",
-    legenda: "Imagem ilustrativa gerada no computador. Resultados variam de pessoa para pessoa." },
+    legenda: "Imagem meramente ilustrativa. Resultados variam de pessoa para pessoa." },
 
   // Agendamento: períodos que aparecem no formulário
   periodos: ["Manhã", "Tarde", "Fim da tarde"],
@@ -97,15 +102,16 @@ window.DADOS = {
   ],
 
   // Perguntas frequentes: só respostas confirmadas pela clínica (Kevin, 2026-11-07).
+  // O texto foi ampliado em 2026-11-09 pra ficar mais acolhedor; os fatos continuam os mesmos.
   faq: [
-    { pergunta: "Vocês aceitam convênio?", resposta: "Sim: Amil, SulAmérica e Porto Seguro." },
-    { pergunta: "Quais são as formas de pagamento?", resposta: "Dinheiro, Pix e cartão de crédito ou débito. Dá para parcelar sem juros." },
-    { pergunta: "A avaliação é paga?", resposta: "Não. A avaliação é gratuita." },
-    { pergunta: "Vocês atendem urgência?", resposta: "Sim, atendemos urgência." },
-    { pergunta: "A partir de que idade vocês atendem crianças?", resposta: "Atendemos crianças pequenas, sem uma idade mínima definida. O que importa é a criança se sentir tranquila durante o atendimento." },
-    { pergunta: "Tenho medo de dentista. E agora?", resposta: "Pode ficar tranquilo: nossos dentistas são delicados e vão no seu ritmo." },
-    { pergunta: "Quanto tempo leva um clareamento?", resposta: "Depende do resultado que você deseja. Há duas opções: o caseiro, com uma placa usada antes de dormir, e o de consultório, que clareia em uma única sessão." },
-    { pergunta: "Tem estacionamento e acessibilidade?", resposta: "Sim, temos estacionamento e acessibilidade." }
+    { pergunta: "Vocês aceitam convênio?", resposta: "Sim. Atendemos pelos convênios Amil, SulAmérica e Porto Seguro. Se o seu plano for um desses, basta nos informar no momento do agendamento para que o atendimento já seja organizado dessa forma." },
+    { pergunta: "Quais são as formas de pagamento?", resposta: "Aceitamos dinheiro, Pix e cartão de crédito ou débito, com a possibilidade de parcelamento sem juros. Na avaliação, apresentamos o valor do tratamento e combinamos com você a forma de pagamento que couber melhor no seu orçamento." },
+    { pergunta: "A avaliação é paga?", resposta: "Não, a avaliação é gratuita e sem compromisso. É o momento em que examinamos sua saúde bucal com calma, entendemos o que você procura e explicamos as opções de tratamento — você só decide depois de saber exatamente o que será feito." },
+    { pergunta: "Vocês atendem urgência?", resposta: "Sim, atendemos urgências. Se você estiver com dor, inchaço ou tiver sofrido alguma pancada na região da boca, entre em contato pelo WhatsApp ou telefone descrevendo o que está sentindo, que orientamos você sobre o próximo passo." },
+    { pergunta: "A partir de que idade vocês atendem crianças?", resposta: "Atendemos crianças de todas as idades, sem idade mínima definida. Quem dá o ritmo da consulta é a própria criança: só seguimos adiante quando ela está tranquila e confortável na cadeira, para que a primeira experiência no dentista seja uma boa lembrança." },
+    { pergunta: "Tenho medo de dentista. E agora?", resposta: "Você não está sozinho — o medo de dentista é bem mais comum do que parece, e aqui ele é tratado com naturalidade. Nossa equipe trabalha com delicadeza, explica cada etapa antes de começar e respeita o seu tempo. Se precisar de uma pausa no meio da consulta, é só avisar que a gente para." },
+    { pergunta: "Quanto tempo leva um clareamento?", resposta: "Depende do resultado que você deseja alcançar. Existem dois caminhos: o clareamento caseiro, feito com uma placa personalizada que você usa antes de dormir, e o de consultório, que clareia em uma única sessão. Na avaliação, o dentista analisa o tom atual dos seus dentes e indica qual das duas opções faz mais sentido para o seu caso." },
+    { pergunta: "Tem estacionamento e acessibilidade?", resposta: "Sim. A clínica conta com estacionamento e com estrutura de acessibilidade. Se você precisar de algum apoio específico na chegada ou na locomoção, é só avisar no agendamento que deixamos tudo preparado para receber você." }
   ],
 
   // Depoimentos: trechos curtos de avaliações reais de 5 estrelas no Google Maps (lidas em 2026-11-04)
@@ -118,8 +124,10 @@ window.DADOS = {
   // Google
   google: { // Google Maps, 2026-11-04
     nota: 4.5,
-    avaliacoes: 22,
-    link: "https://www.google.com/maps/search/?api=1&query=Pr%C3%B3-Dente%20Av.%20Duque%20de%20Caxias%20646%20Paul%C3%ADnia"
+    avaliacoes: "+ de 20", // texto, não número: evita ficar desatualizado a cada avaliação nova
+    // link do painel de avaliações na busca do Google (2026-11-09). É um link de sessão: se um dia
+    // parar de abrir o painel, troque pelo definitivo https://search.google.com/local/writereview?placeid=<ID>
+    link: "https://www.google.com/search?q=pro+dente+paulinia&si=AE1YtOqiKPb2pdLXAi8quZ9vbH4aVq_aX8-3H9iFBLpRNK95c1xaLy0z5mlF4Q-pNvUqVnLThUNBcXNkPnYpZVQ7Glk8r-Lbq9l_4yPxu33xvueHw-FRwhQ6wSEceXZmeej_hIUaAY4E&uds=AE2AFgZqBKGNoZ_YnLHhYf4a8hK8YADt-E6aXTrcVnZAsjK0Eveea6s55k64F9Pwd7HswAcI5m1Ep5XJzyd_q_9par6x4sPCUjafZq-sy9Au2CA0PAJXDtjmKKWxHiGuscQ3eULGgWqU"
   },
 
   // Horários (dia: 0 = domingo ... 6 = sábado)

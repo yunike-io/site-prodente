@@ -18,12 +18,26 @@ function base(ambiente) {
   const sol = new THREE.DirectionalLight("#ffffff", 1.4);
   sol.position.set(2, 3, 4);
   cena.add(sol, new THREE.HemisphereLight("#ffffff", "#bfe3f6", 0.6));
-  return { cena, camera };
+  return { cena, camera, sol };
 }
 
 const materialGengiva = () => new THREE.MeshPhysicalMaterial({ color: "#ee9aa3", roughness: 0.45, clearcoat: 0.8, clearcoatRoughness: 0.25, sheen: 0.5, sheenColor: new THREE.Color("#ffd0d6") });
 // titânio: metal não total, senão reflete as paredes escuras do ambiente e fica preto
 const materialMetal = () => new THREE.MeshStandardMaterial({ color: "#dfe6ec", metalness: 0.75, roughness: 0.3, envMapIntensity: 1.6 });
+
+// Halo de fresnel: uma esfera maior, em aditivo, que só acende na silhueta. É o "brilho de diamante"
+// sem precisar de pós-processamento (bloom custaria um render alvo a mais por cena).
+function halo(raio, cor) {
+  const u = { uK: { value: 0 }, uCor: { value: new THREE.Color(cor) } };
+  const malha = new THREE.Mesh(new THREE.SphereGeometry(raio, 32, 20), new THREE.ShaderMaterial({
+    uniforms: u, transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending,
+    vertexShader: `varying vec3 vN; varying vec3 vP;
+      void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vP = mv.xyz; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform float uK; uniform vec3 uCor; varying vec3 vN; varying vec3 vP;
+      void main(){ float f = pow(1.0 - abs(dot(normalize(vN), normalize(-vP))), 3.0); gl_FragColor = vec4(uCor, f * uK); }`
+  }));
+  return { malha, u };
+}
 
 // ---------- implante: parafuso entra na gengiva, pilar e coroa descem ----------
 function implante(G, amb) {
@@ -39,10 +53,12 @@ function implante(G, amb) {
   perfil.push(new THREE.Vector2(0.17, 0.08), new THREE.Vector2(0.11, 0.1), new THREE.Vector2(0, 0.1));
   const parafuso = new THREE.Mesh(new THREE.LatheGeometry(perfil, 40), materialMetal());
   const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, 0.28, 32), materialMetal());
-  const coroa = new THREE.Mesh(G.coroa, materialEsmalte());
+  const coroa = new THREE.Mesh(G.coroa, materialEsmalte("#f9f6ee"));
   coroa.scale.setScalar(0.55);
+  // gengiva mais encorpada e saturada: no tom antigo ela sumia no fundo claro e o parafuso ficava solto no ar.
+  // Continua semitransparente de propósito — é o que deixa ver o implante por dentro.
   const gengiva = new THREE.Mesh(new RoundedBoxGeometry(1.8, 1.25, 1.1, 6, 0.3),
-    new THREE.MeshPhysicalMaterial({ color: "#f19aa5", roughness: 0.35, transparent: true, opacity: 0.6, depthWrite: false, clearcoat: 1, sheen: 0.6, sheenColor: new THREE.Color("#ffd6dc") }));
+    new THREE.MeshPhysicalMaterial({ color: "#e0727f", roughness: 0.42, transparent: true, opacity: 0.74, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.28, sheen: 0.8, sheenColor: new THREE.Color("#ffc4cd") }));
   gengiva.position.y = -0.62;
   coroa.material.transparent = true;
   grupo.add(parafuso, pilar, coroa, gengiva);
@@ -67,48 +83,75 @@ function implante(G, amb) {
   };
 }
 
-// ---------- aparelho: dentes tortos se alinham no fio ----------
+// ---------- aparelho: dentes tortos na gengiva recebem os braquetes e o fio, e então se alinham ----------
 function aparelho(G, amb) {
   const { cena, camera } = base(amb);
   const grupo = new THREE.Group();
   cena.add(grupo);
-  const N = 5, dentes = [], braquetes = [];
-  const geoBraquete = new RoundedBoxGeometry(0.16, 0.16, 0.08, 2, 0.03);
+  // 9 dentes encostados: o passo angular é a largura do dente dividida pelo raio do arco. Com passo
+  // maior que isso sobram vãos e a arcada vira um colar de contas, que era o problema dos 5 dentes.
+  const N = 9, RAIO = 1.8, LARG = 0.38, PASSO = LARG / RAIO;
+  const dentes = [], braquetes = [];
+  const ang = (i) => (i - (N - 1) / 2) * PASSO;
+  const geoBraquete = new RoundedBoxGeometry(0.15, 0.15, 0.07, 2, 0.028);
   const matB = materialMetal();
-  const desvio = [[0.18, 0.3, -0.12], [-0.12, -0.35, 0.1], [0.05, 0.2, 0.0], [0.16, -0.3, -0.1], [-0.14, 0.4, 0.12]];
+  // desalinhamento inicial de cada dente: [altura, giro, avanço]
+  const desvio = [[0.13, 0.26, -0.10], [-0.10, -0.30, 0.09], [0.06, 0.18, 0.0], [-0.12, 0.33, 0.10], [0.11, -0.22, -0.08],
+    [-0.07, 0.27, 0.09], [0.14, -0.25, -0.10], [-0.11, 0.20, 0.08], [0.09, -0.31, -0.09]];
+  // gengiva: o mesmo arco dos dentes, sobrando um pouco nas pontas e encorpada o bastante pra
+  // engolir a base das coroas (elas descem 0.06 dentro dela, senão aparece fresta na junção)
+  const curvaGengiva = new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => {
+    const a = ang(0) - 0.09 + (i / 12) * (ang(N - 1) - ang(0) + 0.18);
+    return new THREE.Vector3(Math.sin(a) * RAIO, -0.24, Math.cos(a) * RAIO - RAIO);
+  }));
+  const gengiva = new THREE.Mesh(new THREE.TubeGeometry(curvaGengiva, 72, 0.34, 20, false), materialGengiva());
+  gengiva.scale.y = 0.78;
+  grupo.add(gengiva);
   for (let i = 0; i < N; i++) {
-    const a = (i - (N - 1) / 2) * 0.3;
+    const a = ang(i);
     const d = new THREE.Mesh(G.coroa, materialEsmalte());
-    d.scale.set(0.5, 0.6, 0.5);
-    d.userData = { x: Math.sin(a) * 2.1, z: Math.cos(a) * 2.1 - 2.1, a, dv: desvio[i] };
+    // os da frente mais altos e rasos (incisivos), os das pontas mais baixos e fundos (molares)
+    const borda = Math.abs(i - (N - 1) / 2) / ((N - 1) / 2);
+    d.scale.set(LARG, 0.58 - borda * 0.09, 0.30 + borda * 0.06);
+    d.userData = { x: Math.sin(a) * RAIO, z: Math.cos(a) * RAIO - RAIO, a, dv: desvio[i] };
     const b = new THREE.Mesh(geoBraquete, matB);
     dentes.push(d); braquetes.push(b);
     grupo.add(d, b);
   }
   const fio = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ color: "#9fb3c2", metalness: 1, roughness: 0.25, emissive: AZUL, emissiveIntensity: 0 }));
   grupo.add(fio);
-  camera.position.set(0, 0.45, 4.3);
-  camera.lookAt(0, 0.12, -0.45);
+  camera.position.set(0, 0.42, 5.1);
+  camera.lookAt(0, -0.05, -0.3);
   const pts = Array.from({ length: N }, () => new THREE.Vector3());
   return {
     cena, camera,
     atualizar(t) {
-      const c = ciclo(t, 6), alinha = suave(0.15, 0.6, c) * (1 - suave(0.88, 1, c));
+      const c = ciclo(t, 7), fim = 1 - suave(0.9, 1, c);
+      // três tempos: dentes tortos → braquetes e fio entram → dentes se alinham
+      const instala = suave(0.08, 0.28, c) * fim;
+      const alinha = suave(0.34, 0.74, c) * fim;
       dentes.forEach((d, i) => {
         const u = d.userData, k = 1 - alinha;
         d.position.set(u.x, u.dv[0] * k, u.z + u.dv[2] * k);
         d.rotation.set(0, u.a + u.dv[1] * k, u.dv[0] * k * 1.2);
         d.updateMatrix();
-        // braquete preso na face da frente do dente
+        // braquete preso na face da frente do dente, colado assim que o aparelho é instalado
         const frente = new THREE.Vector3(0, 0.32, 0.5).applyMatrix4(d.matrix);
         braquetes[i].position.copy(frente);
         braquetes[i].rotation.copy(d.rotation);
+        braquetes[i].scale.setScalar(Math.max(0.001, instala));
+        braquetes[i].visible = instala > 0.01;
         pts[i].copy(frente).add(new THREE.Vector3(Math.sin(d.rotation.y), 0, Math.cos(d.rotation.y)).multiplyScalar(0.05));
       });
-      fio.geometry.dispose();
-      fio.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.018, 6, false);
-      fio.material.emissiveIntensity = 0.6 * suave(0.55, 0.65, c) * (1 - suave(0.8, 0.88, c));
-      grupo.rotation.y = Math.sin(t * 0.4) * 0.25;
+      const fioE = suave(0.2, 0.34, c) * fim;
+      fio.visible = fioE > 0.02;
+      if (fio.visible) {
+        fio.geometry.dispose();
+        fio.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.021 * fioE, 6, false);
+      }
+      // o fio pisca quando o alinhamento termina
+      fio.material.emissiveIntensity = 0.7 * suave(0.72, 0.8, c) * (1 - suave(0.84, 0.92, c));
+      grupo.rotation.y = Math.sin(t * 0.4) * 0.22;
     }
   };
 }
@@ -118,18 +161,23 @@ function clareamento(G, amb) {
   const { cena, camera } = base(amb);
   const dente = new THREE.Mesh(G.dente, materialEsmalte());
   dente.scale.setScalar(0.95);
-  const anel = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.025, 12, 80), new THREE.MeshBasicMaterial({ color: AZUL, transparent: true, opacity: 0 }));
+  // anel de luz numa órbita inclinada que gira em volta do dente (antes ele só subia e descia reto)
+  const orbita = new THREE.Group();
+  orbita.rotation.z = 0.38;
+  const anel = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.022, 12, 90), new THREE.MeshBasicMaterial({ color: AZUL, transparent: true, opacity: 0 }));
   anel.rotation.x = Math.PI / 2;
+  orbita.add(anel);
+  const glow = halo(1.15, "#9fe4ff"); // pouco maior que o dente: o anel de luz tem que caber no quadro
   const brilhos = [];
   const geoB = new THREE.OctahedronGeometry(0.08, 0);
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 9; i++) {
     const m = new THREE.Mesh(geoB, new THREE.MeshBasicMaterial({ color: i % 2 ? "#ffffff" : "#bfe8fb", transparent: true }));
     m.scale.set(1, 2.2, 1);
-    const ang = (i / 7) * Math.PI * 2;
-    m.userData = { ang, r: 0.75 + (i % 3) * 0.12, y: 0.2 + (i % 4) * 0.18, fase: i * 0.9 };
+    const ang = (i / 9) * Math.PI * 2;
+    m.userData = { ang, r: 0.75 + (i % 3) * 0.12, y: -0.1 + (i % 5) * 0.2, fase: i * 0.9 };
     brilhos.push(m);
   }
-  cena.add(dente, anel, ...brilhos);
+  cena.add(dente, orbita, glow.malha, ...brilhos);
   const amarelo = new THREE.Color("#d9c092"), branco = new THREE.Color("#f5f2e8");
   camera.position.set(0, 0.25, 4.6);
   return {
@@ -139,9 +187,11 @@ function clareamento(G, amb) {
       dente.material.color.copy(amarelo).lerp(branco, k);
       dente.rotation.y = t * 0.6;
       const passa = suave(0.1, 0.55, c);
+      orbita.rotation.y = t * 1.4;
       anel.position.y = 0.95 - passa * 1.9;
       anel.material.opacity = Math.sin(passa * Math.PI) * 0.9;
       anel.scale.setScalar(1 + 0.1 * Math.sin(t * 6));
+      glow.u.uK.value = 0.2 + k * 0.85; // o halo acende junto com o clareamento
       brilhos.forEach((b) => {
         const u = b.userData, a = u.ang + t * 0.5;
         b.position.set(Math.cos(a) * u.r, u.y, Math.sin(a) * u.r);
@@ -171,10 +221,19 @@ function limpeza(G, amb) {
   grupo.add(placa);
   const bolhas = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 12, 8),
     new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0, transmission: 0, transparent: true, opacity: 0.55, clearcoat: 1 }), 24);
-  const infoB = Array.from({ length: 24 }, (_, i) => ({ x: (Math.random() - 0.5) * 1.6, z: (Math.random() - 0.5) * 0.8, v: 0.3 + Math.random() * 0.4, f: Math.random() * 3, s: 0.5 + Math.random() }));
+  const infoB = Array.from({ length: 24 }, () => ({ x: (Math.random() - 0.5) * 1.6, z: (Math.random() - 0.5) * 0.8, v: 0.3 + Math.random() * 0.4, f: Math.random() * 3, s: 0.5 + Math.random() }));
   const jato = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.03, 10, 70), new THREE.MeshBasicMaterial({ color: AZUL, transparent: true, opacity: 0 }));
   jato.rotation.x = Math.PI / 2;
-  cena.add(bolhas, jato);
+  // faíscas que acendem atrás do jato: é o "limpo" ficando visível
+  const faiscas = [];
+  const geoF = new THREE.OctahedronGeometry(0.07, 0);
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.Mesh(geoF, new THREE.MeshBasicMaterial({ color: i % 2 ? "#ffffff" : "#cfeeff", transparent: true }));
+    m.scale.set(1, 2.1, 1);
+    m.userData = { ang: (i / 6) * Math.PI * 2, r: 0.68 + (i % 3) * 0.1, y: 0.1 + (i % 4) * 0.2, fase: i * 1.1 };
+    faiscas.push(m);
+  }
+  cena.add(bolhas, jato, ...faiscas);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sv = new THREE.Vector3(), pv = new THREE.Vector3();
   camera.position.set(0, 0.35, 4.6);
   return {
@@ -200,6 +259,16 @@ function limpeza(G, amb) {
         bolhas.setMatrixAt(i, m);
       });
       bolhas.instanceMatrix.needsUpdate = true;
+      const limpo = passa * (1 - volta);
+      faiscas.forEach((f) => {
+        const u = f.userData, a = u.ang + t * 0.7;
+        f.visible = limpo > 0.05;
+        if (!f.visible) return;
+        f.position.set(Math.cos(a) * u.r, u.y, Math.sin(a) * u.r);
+        const pulso = Math.max(0, Math.sin(t * 3 + u.fase));
+        f.scale.set(pulso, pulso * 2.1, pulso).multiplyScalar(0.34 * limpo);
+        f.rotation.y = t * 2.2;
+      });
     }
   };
 }
@@ -209,36 +278,48 @@ function protese(G, amb) {
   const { cena, camera } = base(amb);
   const grupo = new THREE.Group();
   cena.add(grupo);
-  const curva = new THREE.CatmullRomCurve3(Array.from({ length: 9 }, (_, i) => {
-    const a = -Math.PI * 0.42 + (i / 8) * Math.PI * 0.84;
-    return new THREE.Vector3(Math.sin(a) * 1.25, 0, Math.cos(a) * 0.95 - 0.4);
+  // arco em U, com os semi-eixos ajustados pra arcada inteira caber no enquadramento
+  const curva = new THREE.CatmullRomCurve3(Array.from({ length: 11 }, (_, i) => {
+    const a = -Math.PI * 0.44 + (i / 10) * Math.PI * 0.88;
+    return new THREE.Vector3(Math.sin(a) * 1.15, 0, Math.cos(a) * 0.9 - 0.35);
   }));
-  const gengiva = new THREE.Mesh(new THREE.TubeGeometry(curva, 80, 0.2, 16, false), materialGengiva());
-  gengiva.scale.y = 0.8;
+  // gengiva encorpada: a anterior era fina demais e os dentes pousavam nela em vez de nascer dela
+  const gengiva = new THREE.Mesh(new THREE.TubeGeometry(curva, 90, 0.3, 20, false), materialGengiva());
+  gengiva.scale.y = 0.78;
   grupo.add(gengiva);
-  const N = 8, dentes = [];
+  // 10 dentes: a esta altura o passo ao longo da curva (~0.285) é menor que a largura, então eles
+  // se encostam e formam uma fileira contínua, como numa prótese de verdade
+  const N = 10, ALTURA = 0.19, dentes = [];
   for (let i = 0; i < N; i++) {
     const u = (i + 0.5) / N, p = curva.getPointAt(u), tg = curva.getTangentAt(u);
     const d = new THREE.Mesh(G.coroa, materialEsmalte());
-    const larg = i === 0 || i === N - 1 ? 0.32 : (i === 3 || i === 4 ? 0.27 : 0.25);
-    d.scale.set(larg, 0.4, 0.26);
+    const borda = Math.abs(i - (N - 1) / 2) / ((N - 1) / 2);
+    d.scale.set(0.31, 0.52 - borda * 0.09, 0.27 + borda * 0.05);
     d.rotation.y = Math.atan2(tg.x, tg.z) + Math.PI / 2;
     d.userData = { p, ordem: i };
     dentes.push(d);
     grupo.add(d);
   }
-  camera.position.set(0, 1.9, 3.6);
-  camera.lookAt(0, -0.05, 0);
+  // pilares de titânio em dois pontos do arco: mostram que a prótese se apoia em implantes.
+  // Ficam à vista enquanto os dentes ainda não desceram e somem debaixo deles no fim.
+  [2, 7].forEach((i) => {
+    const p = curva.getPointAt((i + 0.5) / N);
+    const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.34, 20), materialMetal());
+    pilar.position.set(p.x, 0.12, p.z);
+    grupo.add(pilar);
+  });
+  camera.position.set(0, 1.15, 4.3);
+  camera.lookAt(0, 0.12, -0.15);
   return {
     cena, camera,
     atualizar(t) {
       const c = ciclo(t, 7), sai = suave(0.9, 1, c);
       dentes.forEach((d) => {
-        const k = suave(0.06 + d.userData.ordem * 0.06, 0.2 + d.userData.ordem * 0.06, c);
-        d.position.set(d.userData.p.x, 0.2 + (1 - k) * 1.4 + sai * 1.4, d.userData.p.z);
+        const k = suave(0.06 + d.userData.ordem * 0.05, 0.2 + d.userData.ordem * 0.05, c);
+        d.position.set(d.userData.p.x, ALTURA + (1 - k) * 1.4 + sai * 1.4, d.userData.p.z);
         d.visible = k > 0.001 && sai < 0.999;
       });
-      grupo.rotation.y = Math.sin(t * 0.45) * 0.45;
+      grupo.rotation.y = Math.sin(t * 0.45) * 0.28;
     }
   };
 }
@@ -272,12 +353,23 @@ function canal(G, amb) {
     grupo.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.035, 8, false), matCanal));
   });
   grupo.add(vidro);
+  // lima endodôntica: desce pela coroa até a câmara pulpar, acompanhando a luz que percorre o canal
+  const lima = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.03, 1.3, 10), materialMetal());
+  const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.045, 0.26, 12), new THREE.MeshStandardMaterial({ color: "#2e6f9c", roughness: 0.5 }));
+  cabo.position.y = 0.78;
+  lima.add(cabo);
+  grupo.add(lima);
   camera.position.set(0, 0.2, 4.8);
   return {
     cena, camera,
     atualizar(t) {
-      uniforms.uT.value = suave(0, 0.7, ciclo(t, 5)) * 1.3;
+      const c = ciclo(t, 5);
+      uniforms.uT.value = suave(0, 0.7, c) * 1.3;
       camara.material.color.set("#f28c99").lerp(AZUL, suave(0, 0.1, uniforms.uT.value));
+      const entra = suave(0.04, 0.42, c) * (1 - suave(0.86, 0.98, c));
+      lima.visible = entra > 0.01;
+      lima.position.set(0, 1.62 - entra * 0.82, -0.04);
+      lima.rotation.z = Math.sin(t * 9) * 0.05; // vaivém leve, como quem instrumenta o canal
       grupo.rotation.y = t * 0.5;
     }
   };
@@ -285,15 +377,18 @@ function canal(G, amb) {
 
 export const CENAS = { implante, aparelho, clareamento, limpeza, protese, canal };
 
-// dente de esmalte sozinho, usado no simulador de clareamento e nas imagens de antes e depois
+// dente de esmalte sozinho, usado no simulador de clareamento e nas imagens de antes e depois.
+// Devolve também as luzes: o antes e depois mexe nelas pra dar acabamentos diferentes aos dois lados.
 export function denteSimples(G, amb) {
-  const { cena, camera } = base(amb);
+  const { cena, camera, sol } = base(amb);
   const dente = new THREE.Mesh(G.dente, materialEsmalte());
   const brilho = new THREE.PointLight("#ffffff", 3, 6);
   brilho.position.set(-1.5, 1.2, 2);
-  cena.add(dente, brilho);
+  const contorno = new THREE.DirectionalLight("#9fe0f7", 1.6); // rim light: separa o dente do fundo claro
+  contorno.position.set(-2, 1.2, -3);
+  cena.add(dente, brilho, contorno);
   camera.position.set(0, 0.25, 4.5);
-  return { cena, camera, dente };
+  return { cena, camera, dente, brilho, sol, contorno };
 }
 
 export { AZUL, AZUL_ESCURO, suave };

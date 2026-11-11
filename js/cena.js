@@ -158,7 +158,13 @@ function iniciar() {
     luz.position.set(3, 4, 5);
     const luz2 = new THREE.DirectionalLight("#bfe6fa", 1.2);
     luz2.position.set(-4, -1, 2);
-    cena.add(luz, luz2);
+    // luzes de contorno (rim light): vêm de trás e desenham a borda do dente. Sem elas o vidro
+    // se dissolve no fundo azul-claro e o volume some. Uma turquesa fria e outra quente, opostas.
+    const contorno = new THREE.DirectionalLight("#5fd8f5", 3.4);
+    contorno.position.set(-2.4, 1.7, -4.5);
+    const contornoQuente = new THREE.DirectionalLight("#ffe3bd", 1.8);
+    contornoQuente.position.set(3.2, -0.9, -3.6);
+    cena.add(luz, luz2, contorno, contornoQuente);
 
     // vidro com dissolução: o shader descarta os pontos onde o ruído < uDiss e acende a borda
     const U = { uDiss: { value: 0 }, uMorf: { value: 0 }, uTempo: { value: 0 } };
@@ -197,10 +203,14 @@ function iniciar() {
       geo.setAttribute("aAlvo", new THREE.BufferAttribute(alvo, 3));
       geo.setAttribute("aCor", new THREE.BufferAttribute(cor, 3));
       geo.setAttribute("aAleat", new THREE.BufferAttribute(aleat, 1));
-      Object.assign(U, { uDente: { value: new THREE.Matrix4() }, uLogo: { value: new THREE.Vector3(2, 0, 0) }, uTam: { value: celular ? 26 : 21 }, uPixel: { value: dpr } });
+      Object.assign(U, {
+        uDente: { value: new THREE.Matrix4() }, uLogo: { value: new THREE.Vector3(2, 0, 0) },
+        uTam: { value: celular ? 26 : 21 }, uPixel: { value: dpr },
+        uMouse: { value: new THREE.Vector3(999, 999, 0) }, uForca: { value: 0 }
+      });
       pontos = new THREE.Points(geo, new THREE.ShaderMaterial({
         uniforms: U, transparent: true, depthWrite: false,
-        vertexShader: `uniform float uDiss, uMorf, uTempo, uTam, uPixel; uniform mat4 uDente; uniform vec3 uLogo;
+        vertexShader: `uniform float uDiss, uMorf, uTempo, uTam, uPixel, uForca; uniform mat4 uDente; uniform vec3 uLogo, uMouse;
           attribute vec3 aAlvo; attribute vec3 aCor; attribute float aAleat;
           varying vec3 vCor; varying float vAlfa;
           ${GLSL_RUIDO}
@@ -214,11 +224,19 @@ function iniciar() {
             float arco = sin(e * 3.14159);
             vec3 p = mix(a, b, e) + normalize(a - centro + 0.0001) * arco * (0.45 + aAleat * 0.9);
             p.z += arco * (aAleat - 0.5) * 1.6;
-            p += vec3(sin(uTempo * 0.9 + aAleat * 50.0), cos(uTempo * 0.8 + aAleat * 31.0), sin(uTempo * 0.7 + aAleat * 17.0)) * 0.012 * (1.0 + 3.0 * arco);
-            vCor = mix(vec3(0.55, 0.82, 0.96), aCor, smoothstep(0.35, 1.0, e));
+            // ponteiro: as partículas fogem do cursor e respiram mais forte perto dele (matéria viva).
+            // uMouse é o ponto do plano z=0 sob o mouse, no mesmo espaço de p.
+            // Reação de propósito discreta: raio curto (o 2.0) e deslocamento pequeno, pra ser um
+            // afago na nuvem e não um buraco que persegue o cursor.
+            vec2 dm = p.xy - uMouse.xy;
+            float perto = uForca * exp(-dot(dm, dm) * 3.2);
+            p.xy += normalize(dm + vec2(0.0001, 0.0)) * perto * 0.085;
+            p.z += perto * (aAleat - 0.5) * 0.10;
+            p += vec3(sin(uTempo * 0.9 + aAleat * 50.0), cos(uTempo * 0.8 + aAleat * 31.0), sin(uTempo * 0.7 + aAleat * 17.0)) * (0.012 + perto * 0.008) * (1.0 + 3.0 * arco);
+            vCor = mix(vec3(0.55, 0.82, 0.96), aCor, smoothstep(0.35, 1.0, e)) + perto * 0.04;
             vAlfa = clamp((uDiss - n) / 0.05, 0.0, 1.0);
             vec4 mv = modelViewMatrix * vec4(p, 1.0);
-            gl_PointSize = uTam * uPixel * (0.7 + aAleat * 0.6) * (1.0 + arco * 0.6) / -mv.z;
+            gl_PointSize = uTam * uPixel * (0.7 + aAleat * 0.6) * (1.0 + arco * 0.6 + perto * 0.07) / -mv.z;
             gl_Position = projectionMatrix * mv;
           }`,
         fragmentShader: `varying vec3 vCor; varying float vAlfa;
@@ -238,11 +256,15 @@ function iniciar() {
       });
     }
 
-    // ponteiro inclina o dente
+    // ponteiro inclina o dente (e, depois que ele vira partículas, empurra a logo)
     const mira = { x: 0, y: 0 }, atual = { x: 0, y: 0 };
+    let temPonteiro = false;
+    const ndc = new THREE.Vector2(), raio = new THREE.Raycaster();
+    const planoLogo = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), pontoMouse = new THREE.Vector3();
     if (!semMovimento) window.addEventListener("pointermove", (e) => {
       mira.x = e.clientX / innerWidth * 2 - 1;
       mira.y = e.clientY / innerHeight * 2 - 1;
+      temPonteiro = true;
     }, { passive: true });
 
     const secao = document.getElementById("topo");
@@ -291,6 +313,13 @@ function iniciar() {
           pivo.updateMatrixWorld();
           U.uDente.value.copy(dente.matrixWorld);
           pontos.visible = diss > 0.001;
+          // só no mouse: no celular o pointermove só dispara arrastando e deixaria o empurrão preso
+          if (temPonteiro && !celular) {
+            ndc.set(mira.x, -mira.y); // clientY cresce pra baixo, o NDC do WebGL cresce pra cima
+            raio.setFromCamera(ndc, camera);
+            if (raio.ray.intersectPlane(planoLogo, pontoMouse)) U.uMouse.value.copy(pontoMouse);
+            U.uForca.value = Math.min(1, diss) * (0.3 + 0.7 * morf);
+          } else U.uForca.value = 0;
         }
       }
     };
@@ -334,15 +363,32 @@ function iniciar() {
       cv.width = Math.floor(w * dpr); cv.height = Math.floor(h * dpr);
       const bw = renderer.domElement.width / dpr, bh = renderer.domElement.height / dpr;
       if (w > bw || h > bh) renderer.setSize(Math.max(w, bw), Math.max(h, bh), false);
-      s.dente.material.color.set(cv.dataset.tom);
+      // os dois lados não são só duas cores: "antes" é esmalte natural, meio fosco e translúcido;
+      // "depois" é cerâmica polida, com reflexo limpo e luz mais forte pra dar o brilho de diamante.
+      const depois = !!cv.closest(".ad-depois"), m = s.dente.material;
+      m.color.set(cv.dataset.tom);
+      m.roughness = depois ? 0.07 : 0.44;
+      m.clearcoatRoughness = depois ? 0.02 : 0.3;
+      m.envMapIntensity = depois ? 1.9 : 0.8;
+      m.sheen = depois ? 0.25 : 0.85;
+      m.sheenColor.set(depois ? "#ffffff" : "#ffeccf");
+      s.brilho.intensity = depois ? 6.5 : 2.2;
+      s.sol.intensity = depois ? 2.1 : 1.1;
+      s.contorno.intensity = depois ? 2.6 : 1.2;
       s.camera.aspect = w / h;
       s.camera.updateProjectionMatrix();
       renderer.setViewport(0, 0, w, h);
       renderer.setScissor(0, 0, w, h);
       renderer.render(s.cena, s.camera);
       const x = cv.getContext("2d"), fonte = renderer.domElement;
-      const g = x.createLinearGradient(0, 0, 0, cv.height);
-      g.addColorStop(0, "#f4fbff"); g.addColorStop(1, "#d4ecf8");
+      let g;
+      if (depois) { // halo claro atrás do dente clareado
+        g = x.createRadialGradient(cv.width * 0.5, cv.height * 0.45, 0, cv.width * 0.5, cv.height * 0.45, cv.height * 0.95);
+        g.addColorStop(0, "#ffffff"); g.addColorStop(0.55, "#e8f6fd"); g.addColorStop(1, "#c7e6f7");
+      } else {
+        g = x.createLinearGradient(0, 0, 0, cv.height);
+        g.addColorStop(0, "#f7fcff"); g.addColorStop(1, "#dbeef8");
+      }
       x.fillStyle = g;
       x.fillRect(0, 0, cv.width, cv.height);
       x.drawImage(fonte, 0, fonte.height - cv.height, cv.width, cv.height, 0, 0, cv.width, cv.height);

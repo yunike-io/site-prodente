@@ -85,7 +85,8 @@ window.DADOS = {
 
   // Equipe (dados reais, enviados pela Dra. Daniela em 2026-11-04)
   // foto: caminho da foto (ex.: "assets/equipe/daniela.jpg", quadrada). Vazio mostra o placeholder.
-  // whatsapp das psicólogas: FICTÍCIOS (pedido do Kevin, 2026-11-04). Trocar pelos reais antes de publicar.
+  // whatsapp: números reais das psicólogas e da psicopedagoga (enviados pelo Kevin, 2026-11-12).
+  //   Formato: só números, com 55 + DDD. Sem whatsapp, o cartão sai sem o botão.
   // area: "psicologia" põe a pessoa na seção de psicologia; sem area, ela fica na Equipe (odontologia).
   // responsavel: true em quem for responsável técnico(a); aparece no rodapé.
   equipe: [
@@ -94,11 +95,11 @@ window.DADOS = {
     { nome: "Dra. Aline Giunco", titulo: "Cirurgiã Dentista", cargo: "Endodontista", cro: "CROSP 096676", foto: "assets/equipe/aline.jpg" },
     { nome: "Dr. Lindsey Silva Borreli", titulo: "Cirurgião Dentista", cargo: "Periodontista", cro: "CROSP 85554", foto: "assets/equipe/lindsey.jpg" },
     { nome: "Dra. Sarah Ferreira", titulo: "Cirurgiã Dentista", cargo: "Especialista em Ortodontia e Ortopedia Funcional dos Maxilares", cro: "CROSP 103626", foto: "assets/equipe/sarah.jpg" }, // drasarahferreira.com.br, 2026-11-04
-    { nome: "Márcia Regina Ioricci", cargo: "Psicóloga Clínica", cro: "CRP 06/220154", foto: "", area: "psicologia", whatsapp: "", whatsappTexto: "" /* FICTÍCIO removido em 2026-11-07: pôr o número real */ },
-    { nome: "Ana Paula Bernardo", cargo: "Psicóloga Clínica", cro: "CRP 06/22422", foto: "", area: "psicologia", whatsapp: "", whatsappTexto: "" /* FICTÍCIO removido em 2026-11-07: pôr o número real */ },
-    { nome: "Tatiane Soares", cargo: "Psicóloga Clínica", cro: "CRP 06/115394", foto: "", area: "psicologia", whatsapp: "", whatsappTexto: "" /* FICTÍCIO removido em 2026-11-07: pôr o número real */ },
-    { nome: "Kely Fonseca", cargo: "Psicóloga", cro: "CRP 06/181608", foto: "", area: "psicologia", whatsapp: "", whatsappTexto: "" /* FICTÍCIO removido em 2026-11-07: pôr o número real */ },
-    { nome: "Luciana Nascimento", cargo: "Psicopedagoga, Neuropsicopedagoga e Neuropsicanalista", cro: "CBO 2394-25", foto: "assets/equipe/luciana.jpg", area: "psicologia" }
+    { nome: "Márcia Regina Ioricci", cargo: "Psicóloga Clínica", cro: "CRP 06/220154", foto: "", area: "psicologia", whatsapp: "5519999789961", whatsappTexto: "(19) 99978-9961" },
+    { nome: "Ana Paula Bernardo", cargo: "Psicóloga Clínica", cro: "CRP 06/22422", foto: "", area: "psicologia", whatsapp: "5519983014339", whatsappTexto: "(19) 98301-4339" },
+    { nome: "Tatiane Soares", cargo: "Psicóloga Clínica", cro: "CRP 06/115394", foto: "", area: "psicologia", whatsapp: "5519992319030", whatsappTexto: "(19) 99231-9030" },
+    { nome: "Kely Fonseca", cargo: "Psicóloga", cro: "CRP 06/181608", foto: "", area: "psicologia", whatsapp: "5519991986705", whatsappTexto: "(19) 99198-6705" },
+    { nome: "Luciana Nascimento", cargo: "Psicopedagoga, Neuropsicopedagoga e Neuropsicanalista", cro: "CBO 2394-25", foto: "assets/equipe/luciana.jpg", area: "psicologia", whatsapp: "5519995919593", whatsappTexto: "(19) 99591-9593" }
   ],
 
   // Perguntas frequentes: só respostas confirmadas pela clínica (Kevin, 2026-11-07).
